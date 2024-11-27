@@ -1,0 +1,113 @@
+로그인명
+ ㄴ 시스템을 사용하는 사용자 신원을 확인하기 위한 사용자 이름
+ ㄴ 1~8개의 문자로 구성됨
+	ㄴ /usr/include/limits.h의 LOGIN_NAME_MAX 지정
+	ㄴ 시스템에 따라 8개 이상의 문자로 구성된 로그인 명 허용(linux:최대 32자)
+	ㄴ t시스템에 따라 - 또는 _ 와 같은 특수문자를 허용하기도 함.
+ ㄴ 로그인명 파악
+	ㄴ #includ<unistd.h>
+	      char*getlogin(void);
+	ㄴ 프로그램을 사용하는 사용자의 로그인 명을 반환함.
+	ㄴ /var/admutmp파일을 읽어 프로그램에 해당되는 내용을 찾고 그 내용에서 로그인명을 읽어 반환함.
+	ㄴ 사용자가 로그아웃했거나 터미널 없는 rsh 같은 명령으로 프로그램 실행 시 널 값 반환함.
+ ㄴ 로그인명 파악
+	#include <stdio.h>
+	 char *cuserid(char *buf);
+
+ ㄴ getlogin함수의 단점을 보완
+	ㄴ getlogin함수와 같이 /var/adamutmp에서 사용자 정보 읽음.
+	ㄴ 정보를 찾지 못할 경우 실행 중인 프로세스의 사용자 id 패스워드 파일에서 로그인명을 읽어 반환함.
+ ㄴ 사용자 로그인명을 읽어 buf에 저장하며 buf 저장공간을 사용할 수 없을 경우 임시 메모리에 로그인명을 저장하고 임시 메모리 영역을 가리키는 포인터를 반환함.
+
+사용자 ID 번호
+ ㄴ 시스템 사용자를 나타내는 정수 값(15bit)
+	ㄴ Super User: 0
+	ㄴ 1~100: 시스템 용도(Red Hat:101~499, Debian: ~999)
+ ㄴ 사용자 ID 번호에는 '실제 사용자 ID 번호'와 '유효 사용자 ID 번호'가 있다.
+	ㄴ 실제 사용자 ID 번호 : 프로그램을 실행하는 사용자를 가리키며 로그인 정보 기록에 사용
+	ㄴ 유효 사용자 ID 번호 : 프로세스의 접근 권한을 결정할 때 사용
+	ㄴ 유효 사용자 ID는 일반적으로 실제 사용자 ID와 같지만 set-user-id 비트 등으로 다른 ID로 바꾸어 프로세스에게 추가적인 접근 권한을 줄 수 있음.
+ ㄴ 사용자 ID는 시스템에서 유일하거나 한 명의 사용자만 사용할 수 있으나 같은 사용자 ID 번호를 하나 이상의 로그인명을 사용할 수도 있음.
+	ㄴ 여러 사람이 다른 패스워드를 사용하지만 같은 권한으로 로그인할 수 있도록 함.
+
+실제 사용자 ID와 유효 사용자 ID 확인
+	#include <sys/types.h>
+	#include <unistd.h>
+	uid_t getuid(void);
+	uid_t geteuid(void);
+실제 사용자 ID와 유효 사용자 ID 설정
+	#include <sys/types.h>
+	#include <unistd.h>
+	int setuid(uid_t uid);
+	int seteuid(uid_t euid);
+ ㄴ setuid 함수를 호출한 프로세스의 실제 유효 사용자 ID와 저장된 사용자 ID를 uid에 저장된 ID 값으로 설정함.
+ ㄴ seteuid 함수는 함수를 호출한 프로세스의 유효 사용자 ID만 euid에 저장된 ID를 설정함.
+ ㄴ 함수 실행이 성공하면 0을 반환하고 실패하면 -1을 반환함.
+
+ ㄴ 로그인 시 로그인 프로세스는 실제, 유효, 저장된 사용자 ID를 입력한 사용자 ID를 설정함.
+	ㄴ 그러나 일반 프로세스가 프로그램을 실행 시 그 프로세스와 관련된 사용자 ID값이 변경 될 수 있음.
+	ㄴ set-user-id 비트 설정에 따라 프로세스의 유효 사용자 ID와 저장된 사용자 ID는 프로그램 파일의 소유자 ID가 설정되어야 함.
+ ㄴ setuid와 seteuid 실행 시 주의점
+	ㄴ setuid 함수를 호출한 프로세스의 유효 사용자 ID가 superuser면 실제, 유효, 저장된 사용자 ID는 uid값으로 설정됨
+	ㄴ setuid 함수를 호출한 프로세스의 유효 사용자 ID가 superuser가 아니고 uid가 함수를 호출한 프로세스의 실제 사용자 ID 또는 저장된 사용자 ID와 같으면 유효 사용자 ID uid값으로 설정됨.
+	ㄴ seteuid함수를 호출한 프로세스의 유효 사용자 ID가 superuser면 유효 사용자 ID는 euid로 설정됨
+	ㄴ seteuid람수를 호출한 프로세스의 유효 사용자 ID가 superuser가 아니고 프로세스의 실제 사용자 ID 또는 저장된 사용자  ID와 euid가 같다면 유효 사용자 ID는 euid값으로 설정
+
+그룹 ID 번호
+ ㄴ 그룹
+	ㄴ 동일한 목적을 공유하는 사용자들의 모임
+	ㄴ 시스템의 파일이나 시스템 리소스를 공유함.
+ ㄴ 각 프로세스와 관련된 실제 그룹번호, 유효 그룹 번호,저장된 그룹 번호가 있음.
+	ㄴ 파일 접근 권한에 영향을 줌.
+	ㄴ 프로세스 접근 권한을 결정하는 데 사용함.
+ ㄴ 그룹 ID 획득 및 설정
+	#include <sys/types.h>
+	#include <unistd.h>
+	gid_t getgid(void);
+	gid_t getegid(void);
+	int setgid(gid_t gid);
+	int setegid(gid_t egid);
+패스워드 파일
+ ㄴ 시스템 사용자 로그인 정보와 관련된 내용을 저장하고 있는 파일
+	ㄴ etc/passwd
+	ㄴ 로그인명, 사용자 ID 번호, 작업 디렉토리, 로그인 쉘 등을 포함한
+	ㄴ 구 버전 유닉스에는 암호화된 패스워드도 포함되어 있지만 최신 유닉스 시스템은 패스워드를 별도의 파일로 관리함.
+ ㄴ 패스워드 파일의 구성
+	ㄴ 로그인 이름
+	ㄴ 암호화된 패스워드(미사용)
+	ㄴ 사용자 UID
+	ㄴ 사용자 GID
+	ㄴ 패스워드 주기(미사용)
+	ㄴ 사용자의 실제 이름 등 사용자 관련 정보 기술
+	ㄴ 사용자 홈 디렉토리
+	ㄴ 사용자 사용 쉘
+
+ ㄴ passwd 구조체
+	ㄴ 패스워드 파일에서 정보를 추출하기 위한 구조체
+	struct passwd{
+		char *pw_name; //사용자 로그인 명
+		char *pw_passwd; // 암호화된 패스워드
+		uid_t *pw_uid; // 사용자 ID 번호
+		gid_t *pw_gid; // 사용자 그룹 ID 번호
+		char *pw_age; // 패스워드 변경 주기
+		char *pw_comment; // 패스워드 파일에 없음
+		char *pw_gecos; // 사용자 실명 외 관련 정보
+		char *pw_dir; // 홈 디렉토리(절대경로)
+		char *pw_shell; // 사용자 로그인 쉘(절대 경로)
+
+	}
+
+ ㄴ passwd 구조체
+	ㄴ 패스워드 파일을 읽기 위한 함수
+	#include <pwd.h>
+	struct passwd *getpwnam(const char *name);
+	// 패스워드 파일에서 name 과 같은 사용자 정보를 줄 단위로 읽어 passwd 구조체에 담고 구조체 포인터 반환함.
+	struct passwd *getpwuid(uid_t uid);
+	// uid와 같은 사용자 ID를 포함한 줄을 찾아 passwd 구조체에 담고 구조체 반환함.
+	struct passwd *getpwent(void);
+	// 패스워드 파일을 순차적으로 읽어 읽은 정보를 passwd 구조체에 저장하고 반환함.
+	void setpwent(void);
+	// 패스워드 파일이 열려있지 않다면 파일을 열고 읽기,쓰기 오프셋을 파일의 시작지점으로 설정(like 초기화)
+	void endpwent(void);
+	// 패스워드 파일을 닫음.
+	
