@@ -375,5 +375,107 @@ Shadow password 파일
 		unsigned long sp_flag;
 		//현재 사용하지 않으나 향후 추가되는 요소를 위한 임시 필드
 		};
+	
+	ㄴ shadow password 파일 활용 함수
+	#include <shadow.h>
+	struct spwd *getspnam(const char *name);
+	// getspnam(): shadow 파일에서 name과 일치하는 로그인 명을 가진 사용자의 암호정보를 읽어서 spwd 구조체로 반환함.
+	struct spwd *fgetspent(FILE *fp);
+	//fgetspent(): shadow파일을 대체하는 파일 fp에서 정보를 읽어  spwd 구조체로 반환함.
+	struct spwd *getspent(void);
+	//getspent(): 함수를 호출할 떄 마다 shadow 파일에서 암호정보를 한줄 씩 읽음.
+	void setspent(void);
+	//setspent(): shadow password파일의 읽기, 쓰기 오프셋을 시작지점으로 설정함.
+	void endspent(void);
+	//endspent(): 사용한 shadow password 파일을 닫음
+
+ ㄴ 시스템에 등록된 그룹에 대한 정보를 포함함
+	ㄴ /etc/group
+ ㄴ 그룹 정보를 구조체
+	struct group {
+	char *gr_name;
+	// gr_name: 그룹명
+	char *gr_passwd;
+	//gr_passwd: 공백이거나 암호화된 패스워드가 들어감 -> 만약 password가 있으면 newgrp명령 시 새 그룹 접근권한을 위해 패스워드 입력 해야함.
+	gid_t gr_gid;
+	//gr_gid: 그룹 ID 번호
+	char **gr_mem;
+	// gr_mem: 그룹의 멤버인 로그인명
+	};
+	
+ ㄴ 그룹을 다루기 위한 함수
+	#include <grp.h>
+	struct group *getgrnam(const char *name);
+	//getgrnam(): 그룹 파일을 읽어서 name과 같은 그룹 정보를 읽어 group 구조체 반환함.
+	struct group *getgrgid(gid_t gid);
+	//getgrgid(): gid와 같은 그룹 ID를 갖는 그룹정보를 읽어 group 구조체 반환함.
+	struct group *fgetgrent(FILE *fp);
+	//fgetgrent(): /etc/group 파일 대신 fp에 지정한 파일에서 한줄 씩 그룹정보를 읽어 반환
+	struct group  *getgrent(void);
+	//getgrent(): /etc/group 파일에서 그룹정보를 한줄 씩 그룹정보를 읽어 반환함
+	void setgrent(void);
+	//setgrent(): 그룹 파일을 열고 읽기, 쓰기 오프셋을 파일의 시작 지점으로 설정함.
+	void endgrent(void);
+	//endgrent(): 사용한 그룹 파일을 닫음.
+
+ ㄴ utmp(utmpx)와 wtmp(wtmpx)파일
+	ㄴ /var/adm에 위치
+	ㄴ who, finger, login과 같은 명령어를 위한 사용자 정보와 로그인 기록
+	ㄴ utmp(utmpx)
+	-> 시스템의 현재 상태 정보 기록
+	-> 로그인한 사용자 정보 기록
+	ㄴ wtmp(wtmpx)
+	-> utmp와 동일한 형식
+	-> 히스토리 정보 포함
+	struct utmp{
+	char ut_user[8];
+	// ut_user: 사용자 로그인명
+	char ut_id[4];
+	// ut_id: init 프로그램에서파생되는 프로세스(/etc/inittab id)
+	char ut_line[12];
+	// ut_line: 사용자가 로그인한 장치명		
+	short ut_pid;
+	// ut_pid: 현재 실행 중인 프로세스 ID
+	short ut_type;
+	// ut_type: 항목의 타입
+	struct exit_status ut_exit;
+	//ut_exit: DEAD_PROCESS의 프로세스 종료상태와 리턴코드
+	time_t ut_time;
+	// ut_time: 항목이 마지막으로 변경된 시간
+	}
+	ㄴ ut_type
+	-> EMPTY: 빈레코드
+	-> RUN_LVL: 변경된 시스템의 실행 레벨
+	-> BOOT_TIME: 시스템 부팅
+	-> OLD_TIME: 시스템 시간 변경(변경 전 시간)
+	-> NEW_TIME: 시스템 시간 변경(변경 후 시간)
+	-> INIT_PROCESS: 	init에서 생기는 프로세스
+	-> LOGIN_PROCESS: 사용자가 로그인할 때 까지 기다리는 프로세스
+	-> USER_PROCESS: 사용자 로그인 세션
+	-> DEAD_PROCESS: 종료한 프로세스
+	-> ACCOUNTING: 로그인 기록 정보
+
+	struct utmpx {
+	char ut_user[32];
+	char ut_id[4];
+	char ut_line[32];
+	pid_t ut_pid;
+	short ut_type;
+	struct exit_status ut_exit;
+	struct timeval ut_tv;
+	long ut_session;
+	long pad[5];
+	short ut_syslen;
+	char ut_host[257];
+	}
+	#include<utmpx.h>
+	struct utmpx *getutent(void);
+	struct utmpx *getutxid(const struct utmpx *id);
+	struct utmpx *getutxline(const struct utmpx *utmpx);
+	void setutxent(void);
+	void endutxent(void);
+	int utmpxname(const char *filename);
+
+
 
 
